@@ -358,7 +358,6 @@ func (s *Scanner) ScanPath(path string, customExcludes ...string) ([]models.Find
 		"vendor",
 		"node_modules",
 		".git",
-		"tmp",
 		"dist",
 		"build",
 		".github",
@@ -395,9 +394,9 @@ func (s *Scanner) ScanPath(path string, customExcludes ...string) ([]models.Find
 			return nil
 		}
 
-		skipExtensions := []string{".md", ".txt", ".rst", ".yaml", ".yml", ".json"}
+		skipExtensions := []string{".md", ".txt", ".rst"}
 		for _, e := range skipExtensions {
-			if ext == e && fileName != "package.json" && fileName != "go.mod" {
+			if ext == e {
 				return nil
 			}
 		}
