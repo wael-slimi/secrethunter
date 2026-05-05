@@ -116,9 +116,11 @@ func (c *CLI) printHelp() {
 ║    set default-ai <name>   - Set default AI provider         ║
 ║                                                                     ║
 ║  Scanning                                                     ║
-║    scan local <path>        - Scan local directory            ║
-║    scan github <url>       - Scan GitHub repo (clone first)  ║
-║    scan content <text>    - Scan raw text content            ║
+║    scan local <path>              - Scan local directory       ║
+║    scan local <path> --exclude X  - Scan with exclusions       ║
+║    scan github <url>               - Scan GitHub repo          ║
+║    scan github <url> --exclude X - Scan with exclusions       ║
+║    scan content <text>            - Scan raw text content      ║
 ║                                                                     ║
 ║  Analysis                                                     ║
 ║    analyze <id>            - Run AI analysis on finding       ║
@@ -189,14 +191,25 @@ func (c *CLI) handleSet(args []string) {
 
 func (c *CLI) handleScan(args []string) {
 	if len(args) < 2 {
-		fmt.Println(c.color("Usage: scan <type> <path/url>", "red"))
+		fmt.Println(c.color("Usage: scan <type> <path> [--exclude pattern]", "red"))
 		return
 	}
 
 	scanType := strings.ToLower(args[0])
 	target := args[1]
 
+	var excludes []string
+	for i := 2; i < len(args); i++ {
+		if args[i] == "--exclude" && i+1 < len(args) {
+			excludes = append(excludes, args[i+1])
+			i++
+		}
+	}
+
 	fmt.Println(c.color("Scanning...", "yellow"))
+	if len(excludes) > 0 {
+		fmt.Printf(c.color("  Excluding: %s\n", "dim"), strings.Join(excludes, ", "))
+	}
 
 	start := time.Now()
 
@@ -210,14 +223,14 @@ func (c *CLI) handleScan(args []string) {
 			fmt.Printf(c.color("Error resolving path: %v\n", "red"), err)
 			return
 		}
-		findings, err = c.scanner.ScanPath(absPath)
+		findings, err = c.scanner.ScanPath(absPath, excludes...)
 	case "github":
 		cloneDir, err := c.cloneGitHubRepo(target)
 		if err != nil {
 			fmt.Printf(c.color("Error cloning repo: %v\n", "red"), err)
 			return
 		}
-		findings, err = c.scanner.ScanPath(cloneDir)
+		findings, err = c.scanner.ScanPath(cloneDir, excludes...)
 		os.RemoveAll(cloneDir)
 		fmt.Println(c.color("  [Cleaned up cloned repository]", "dim"))
 	case "content":

@@ -350,8 +350,21 @@ func loadRules() []Rule {
 	}
 }
 
-func (s *Scanner) ScanPath(path string) ([]models.Finding, error) {
+func (s *Scanner) ScanPath(path string, customExcludes ...string) ([]models.Finding, error) {
 	var findings []models.Finding
+
+	defaultExcludes := []string{
+		"testdata",
+		"vendor",
+		"node_modules",
+		".git",
+		"tmp",
+		"dist",
+		"build",
+		".github",
+	}
+
+	excludes := append(defaultExcludes, customExcludes...)
 
 	err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -359,7 +372,51 @@ func (s *Scanner) ScanPath(path string) ([]models.Finding, error) {
 		}
 
 		if info.IsDir() {
+			dirName := info.Name()
+			for _, exclude := range excludes {
+				if dirName == exclude {
+					return filepath.SkipDir
+				}
+			}
 			return nil
+		}
+
+		fileName := info.Name()
+		ext := filepath.Ext(fileName)
+
+		binaryExtensions := []string{".exe", ".so", ".dll", ".dylib", ".bin", ".a", ".o", ".obj"}
+		for _, e := range binaryExtensions {
+			if ext == e {
+				return nil
+			}
+		}
+
+		if ext == "" && !strings.HasSuffix(fileName, ".go") && !strings.HasSuffix(fileName, ".json") && !strings.HasSuffix(fileName, ".mod") {
+			return nil
+		}
+
+		skipExtensions := []string{".md", ".txt", ".rst", ".yaml", ".yml", ".json"}
+		for _, e := range skipExtensions {
+			if ext == e && fileName != "package.json" && fileName != "go.mod" {
+				return nil
+			}
+		}
+
+		ruleFiles := []string{"scanner.go", "risk.go", "engine.go", "validator.go"}
+		for _, rf := range ruleFiles {
+			if fileName == rf {
+				return nil
+			}
+		}
+
+		if strings.HasSuffix(fileName, "_test.go") {
+			return nil
+		}
+
+		for _, exclude := range excludes {
+			if strings.Contains(filePath, "/"+exclude+"/") || strings.HasSuffix(filePath, "/"+exclude) {
+				return nil
+			}
 		}
 
 		content, err := os.ReadFile(filePath)
