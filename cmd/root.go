@@ -534,7 +534,7 @@ ___ ___ ___ ___ ___ _____ _  _ _  _ _  _ _____ ___ ___
  \__ \ _| (__|   / _|  | | | __ | || | __ | | | | _||   /
  |___/___\___|_|_\___| |_| |_||_|\__/|_||_| |_| |___|_|_\
  
- < AI_POWERED::SECRET_SCANNER_v1.0 />
+ < SECRETHUNTER::AI_POWERED_SECRET_SCANNER_v1.0 />
  < 175+_PATTERNS::MULTI_AI::REALTIME_VALIDATION />`
 
 	fmt.Println(c.color(banner, "cyan"))
